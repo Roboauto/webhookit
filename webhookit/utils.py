@@ -10,15 +10,11 @@ import json
 import click
 import datetime
 import copy
-import app
+import os
+from webhookit import app
+import base64
 
-
-if unicode:  # noqa
-    # py2
-    the_unicode = unicode  # noqa
-else:  # noqa
-    # py3
-    the_unicode = str  # noqa
+the_unicode = str  # noqa
 
 
 def standard_response(success, data):
@@ -81,56 +77,9 @@ def is_remote_server(s):
 
 # ssh to exec cmd
 def do_ssh_cmd(ip, port, account, pkey, shell, push_data='', timeout=300):
-    import paramiko
-    import StringIO
+    #os.system()
 
-    def is_msg_success(msg):
-        for x in ['fatal', 'fail', 'error']:
-            if msg.startswith(x) or msg.endswith(x):
-                return False
-        return True
-
-    try:
-        port = int(port)
-    except:
-        port = 22
-
-    s = paramiko.SSHClient()
-    s.load_system_host_keys()
-    s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-    try:
-        # 首先以 ssh 密钥方式登陆
-        pkey_file = StringIO.StringIO(pkey.strip() + '\n')  # 注意最后有一个换行
-        private_key = paramiko.RSAKey.from_private_key(pkey_file)
-        s.connect(ip, port, account, pkey=private_key, timeout=10)
-        pkey_file.close()
-    except:
-        # 如果出现异常，则使用 用户密码登陆的方式
-        s.connect(ip, port, account, password=pkey, timeout=10)
-
-#     if push_data:
-#     shell = shell + (" '%s'" % push_data)
-    shell = shell.split('\n')
-    shell = [sh for sh in shell if sh.strip()]
-    shell = ' && '.join(shell)
-
-    stdin, stdout, stderr = s.exec_command(shell, timeout=timeout)
-
-    msg = stdout.read()
-    err = stderr.read()
-
-    success = True
-    if not msg and err:
-        success = False
-        msg = err
-
-    s.close()
-
-    if success:
-        success = is_msg_success(msg)
-
-    return (success, msg)
+    return ("EMPTY_BY_HONZA", "EMPTY_BY_HONZA")
 
 
 # 使用线程来异步执行
@@ -150,15 +99,20 @@ def do_webhook_shell(server, data):
                                         data)
         else:
             log('Start to execute local command. %s' % script)
-            import commands
+            msg = ""
+            #import commands
             # local
-            (success, msg) = commands.getstatusoutput(server.get('SCRIPT', ''))
-            success = success > 0 and False or True
+            #(success, msg) = commands.getstatusoutput(server.get('SCRIPT', ''))
+            data = base64.standard_b64encode(json.dumps(data).encode())
+            
+            os.system("python " + server.get('SCRIPT') + " %s" % data.decode("UTF-8"))
+
+            success = True
     else:
         success = False
         msg = 'There is no SCRIPT configured.'
     # end exec, log data
-    msg = the_unicode(msg, errors='ignore') or ''
+    msg = str(msg)
     msg = msg.strip()
     msg = msg.replace('\n', ' ')
     log('Completed execute: (%s, %s)' % (success, msg))
