@@ -103,7 +103,9 @@ def do_webhook_shell(server, data):
             #import commands
             # local
             #(success, msg) = commands.getstatusoutput(server.get('SCRIPT', ''))
-            data = base64.standard_b64encode(json.dumps(data).encode())
+            tmpdata = json.dumps(data).encode()
+            log(tmpdata)
+            data = base64.standard_b64encode(tmpdata)
             
             os.system("python " + server.get('SCRIPT') + " %s" % data.decode("UTF-8"))
 

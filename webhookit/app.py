@@ -119,7 +119,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             try:
                 client.write_message(msg)
             except Exception as e:
-                utils.log('Error sending message: %s' % str(e))
+                print('Error sending message: %s' % str(e))
 
 
 application = tornado.web.Application([
